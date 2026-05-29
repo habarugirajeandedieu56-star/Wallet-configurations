@@ -32,6 +32,8 @@ export function PiPayment({
   const handlePayment = () => {
     setIsProcessing(true);
     setPaymentStatus('idle');
+    console.log('=== Pi Payment Section Started ===');
+    console.log('Payment initiated with:', { amount, memo, metadata });
 
     const paymentData: PaymentData = {
       amount,
@@ -42,27 +44,38 @@ export function PiPayment({
     piSDK.createPayment(paymentData, {
       onReadyForServerApproval: (paymentId: string) => {
         setPaymentStatus('approving');
-        console.log('Payment ready for server approval:', paymentId);
+        console.log('=== Pi Payment Section: Ready for Server Approval ===');
+        console.log('Payment ID:', paymentId);
+        console.log('Payment details:', { amount, memo, metadata });
         // In production, send paymentId to your backend for approval
         // await fetch('/api/payments/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
       },
       onReadyForServerCompletion: (paymentId: string, txid: string) => {
         setPaymentStatus('completing');
-        console.log('Payment ready for server completion:', paymentId, txid);
+        console.log('=== Pi Payment Section: Ready for Server Completion ===');
+        console.log('Payment ID:', paymentId);
+        console.log('Transaction ID:', txid);
+        console.log('Payment details:', { amount, memo, metadata });
         // In production, send paymentId and txid to your backend for completion
         // await fetch('/api/payments/complete', { method: 'POST', body: JSON.stringify({ paymentId, txid }) });
         setPaymentStatus('completed');
         onPaymentSuccess?.(paymentId, txid);
         setIsProcessing(false);
+        console.log('=== Pi Payment Section: Completed Successfully ===');
       },
       onCancel: (paymentId: string) => {
-        console.log('Payment cancelled:', paymentId);
+        console.log('=== Pi Payment Section: Cancelled ===');
+        console.log('Payment ID:', paymentId);
+        console.log('Payment details:', { amount, memo, metadata });
         setPaymentStatus('idle');
         setIsProcessing(false);
         onPaymentCancelled?.();
       },
       onError: (paymentId: string, error: Error) => {
-        console.error('Payment error:', paymentId, error);
+        console.error('=== Pi Payment Section: Error Occurred ===');
+        console.error('Payment ID:', paymentId);
+        console.error('Error:', error);
+        console.error('Payment details:', { amount, memo, metadata });
         setPaymentStatus('error');
         setIsProcessing(false);
         onPaymentError?.(error);
