@@ -8,6 +8,71 @@ export default function Home() {
   useEffect(() => {
     console.log('=== Pi Payment Section Loaded on Front Page ===');
   }, []);
+
+  // Set up visible console log panel
+  useEffect(() => {
+    const consoleDiv = document.getElementById('pi-payment-console');
+    if (!consoleDiv) return;
+
+    // Store original console methods
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+
+    // Create log entry function
+    const addLogEntry = (type: 'log' | 'error' | 'warn', message: string) => {
+      if (!consoleDiv) return;
+      
+      const now = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `mb-1 ${type === 'error' ? 'text-red-400' : type === 'warn' ? 'text-yellow-400' : 'text-green-400'}`;
+      entry.innerHTML = `<span class="text-gray-500 mr-2">[${now}]</span><span class="font-mono">${message}</span>`;
+      
+      // Add to top of console div
+      consoleDiv.insertBefore(entry, consoleDiv.firstChild);
+      
+      // Limit to last 50 entries
+      if (consoleDiv.children.length > 50) {
+        consoleDiv.removeChild(consoleDiv.lastChild!);
+      }
+    };
+
+    // Override console methods to capture Pi Payment logs
+    console.log = (...args: any[]) => {
+      // Only capture Pi Payment related logs
+      const firstArg = args[0];
+      if (typeof firstArg === 'string' && firstArg.includes('Pi Payment Section')) {
+        const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+        addLogEntry('log', message);
+      }
+      originalLog(...args);
+    };
+
+    console.error = (...args: any[]) => {
+      const firstArg = args[0];
+      if (typeof firstArg === 'string' && firstArg.includes('Pi Payment Section')) {
+        const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+        addLogEntry('error', message);
+      }
+      originalError(...args);
+    };
+
+    console.warn = (...args: any[]) => {
+      const firstArg = args[0];
+      if (typeof firstArg === 'string' && firstArg.includes('Pi Payment Section')) {
+        const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+        addLogEntry('warn', message);
+      }
+      originalWarn(...args);
+    };
+
+    // Cleanup function
+    return () => {
+      console.log = originalLog;
+      console.error = originalError;
+      console.warn = originalWarn;
+    };
+  }, []);
   const handleAuthSuccess = (result: AuthResult) => {
     console.log('Authentication successful:', result);
     // Handle successful authentication (e.g., store user data, redirect)
@@ -107,6 +172,18 @@ export default function Home() {
               onPaymentError={handlePaymentError}
               onPaymentCancelled={handlePaymentCancelled}
             />
+            {/* Visible Pi Payment Console Log Panel */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Pi Payment Console Logs
+              </h4>
+              <div id="pi-payment-console" className="text-sm font-mono h-32 overflow-y-auto bg-black text-green-400 p-3 rounded">
+                <div className="text-gray-400">[Pi Payment logs will appear here...]</div>
+              </div>
+            </div>
             {/* Console log for front page Pi Payment section */}
             <script dangerouslySetInnerHTML={{ __html: "console.log('=== Pi Payment Section Loaded on Front Page ===');" }} />
           </div>
