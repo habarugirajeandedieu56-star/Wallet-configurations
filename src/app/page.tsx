@@ -2,8 +2,12 @@
 
 import { PiAuth, PiPayment, PiShare } from '@/components';
 import { AuthResult } from '@/types/pi-sdk';
+import { useEffect } from 'react';
 
 export default function Home() {
+  useEffect(() => {
+    console.log('=== Pi Payment Section Loaded on Front Page ===');
+  }, []);
   const handleAuthSuccess = (result: AuthResult) => {
     console.log('Authentication successful:', result);
     // Handle successful authentication (e.g., store user data, redirect)
@@ -15,17 +19,20 @@ export default function Home() {
   };
 
   const handlePaymentSuccess = (paymentId: string, txid: string) => {
-    console.log('Payment successful:', { paymentId, txid });
+    console.log('=== Pi Payment Section: Payment Successful ===');
+    console.log('Payment ID:', paymentId);
+    console.log('Transaction ID:', txid);
     // Handle successful payment
   };
 
   const handlePaymentError = (error: Error) => {
-    console.error('Payment failed:', error);
+    console.error('=== Pi Payment Section: Payment Failed ===');
+    console.error('Error:', error);
     // Handle payment error
   };
 
   const handlePaymentCancelled = () => {
-    console.log('Payment cancelled by user');
+    console.log('=== Pi Payment Section: Payment Cancelled by User ===');
     // Handle cancelled payment
   };
 
@@ -100,6 +107,8 @@ export default function Home() {
               onPaymentError={handlePaymentError}
               onPaymentCancelled={handlePaymentCancelled}
             />
+            {/* Console log for front page Pi Payment section */}
+            <script dangerouslySetInnerHTML={{ __html: "console.log('=== Pi Payment Section Loaded on Front Page ===');" }} />
           </div>
 
           {/* Features Card */}
