@@ -38,8 +38,8 @@ export interface PaymentData {
 }
 
 export interface PaymentCallbacks {
-  onReadyForServerApproval: (paymentId: string) => void;
-  onReadyForServerCompletion: (paymentId: string, txid: string) => void;
+  onReadyForServerApproval: (paymentId: string) => void | Promise<void>;
+  onReadyForServerCompletion: (paymentId: string, txid: string) => void | Promise<void>;
   onCancel: (paymentId: string) => void;
   onError: (paymentId: string, error: Error) => void;
 }

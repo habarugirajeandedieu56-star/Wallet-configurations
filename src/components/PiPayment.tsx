@@ -29,7 +29,7 @@ export function PiPayment({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'approving' | 'completing' | 'completed' | 'error'>('idle');
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     setIsProcessing(true);
     setPaymentStatus('idle');
     console.log('=== Pi Payment Section Started ===');
@@ -42,26 +42,86 @@ export function PiPayment({
     };
 
     piSDK.createPayment(paymentData, {
-      onReadyForServerApproval: (paymentId: string) => {
+      onReadyForServerApproval: async (paymentId: string) => {
         setPaymentStatus('approving');
         console.log('=== Pi Payment Section: Ready for Server Approval ===');
         console.log('Payment ID:', paymentId);
         console.log('Payment details:', { amount, memo, metadata });
-        // In production, send paymentId to your backend for approval
-        // await fetch('/api/payments/approve', { method: 'POST', body: JSON.stringify({ paymentId }) });
+        
+        try {
+          // Add timeout to prevent infinite loading
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Approval timeout - took too long')), 30000)
+          );
+          
+          // Call backend to approve the payment
+          const approvalPromise = fetch('/api/payments/approve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId }),
+          }).then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || 'Failed to approve payment');
+            }
+            return data;
+          });
+          
+          // Race between approval and timeout
+          const data = await Promise.race([approvalPromise, timeoutPromise]);
+          
+          console.log('=== Pi Payment Section: Server Approval Successful ===');
+          console.log('Approval response:', data);
+        } catch (error) {
+          console.error('=== Pi Payment Section: Server Approval Failed ===');
+          console.error('Error:', error);
+          setPaymentStatus('error');
+          setIsProcessing(false);
+          onPaymentError?.(error instanceof Error ? error : new Error('Approval failed'));
+        }
       },
-      onReadyForServerCompletion: (paymentId: string, txid: string) => {
+      onReadyForServerCompletion: async (paymentId: string, txid: string) => {
         setPaymentStatus('completing');
         console.log('=== Pi Payment Section: Ready for Server Completion ===');
         console.log('Payment ID:', paymentId);
         console.log('Transaction ID:', txid);
         console.log('Payment details:', { amount, memo, metadata });
-        // In production, send paymentId and txid to your backend for completion
-        // await fetch('/api/payments/complete', { method: 'POST', body: JSON.stringify({ paymentId, txid }) });
-        setPaymentStatus('completed');
-        onPaymentSuccess?.(paymentId, txid);
-        setIsProcessing(false);
-        console.log('=== Pi Payment Section: Completed Successfully ===');
+        
+        try {
+          // Add timeout to prevent infinite loading
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Completion timeout - took too long')), 30000)
+          );
+          
+          // Call backend to complete the payment
+          const completionPromise = fetch('/api/payments/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId, txid }),
+          }).then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || 'Failed to complete payment');
+            }
+            return data;
+          });
+          
+          // Race between completion and timeout
+          const data = await Promise.race([completionPromise, timeoutPromise]);
+          
+          console.log('=== Pi Payment Section: Server Completion Successful ===');
+          console.log('Completion response:', data);
+          setPaymentStatus('completed');
+          onPaymentSuccess?.(paymentId, txid);
+          console.log('=== Pi Payment Section: Completed Successfully ===');
+        } catch (error) {
+          console.error('=== Pi Payment Section: Server Completion Failed ===');
+          console.error('Error:', error);
+          setPaymentStatus('error');
+          onPaymentError?.(error instanceof Error ? error : new Error('Completion failed'));
+        } finally {
+          setIsProcessing(false);
+        }
       },
       onCancel: (paymentId: string) => {
         console.log('=== Pi Payment Section: Cancelled ===');
